@@ -407,7 +407,7 @@ class EvaluationModule(EvaluationModuleInfoMixin):
             self.file_paths = file_paths
             self.filelocks = filelocks
 
-    def compute(self, *, predictions=None, references=None, **kwargs) -> Optional[dict]:
+    def compute(self, **kwargs) -> Optional[dict]:
         """Compute the evaluation module.
 
         Usage of positional arguments is not allowed to prevent mistakes.
@@ -433,17 +433,16 @@ class EvaluationModule(EvaluationModuleInfoMixin):
         >>> accuracy.compute(predictions=[0, 1, 1, 0], references=[0, 1, 0, 1])
         ```
         """
-        all_kwargs = {"predictions": predictions, "references": references, **kwargs}
-        if predictions is None and references is None:
-            missing_kwargs = {k: None for k in self._feature_names() if k not in all_kwargs}
-            all_kwargs.update(missing_kwargs)
+        if kwargs.get("predictions") is None and kwargs.get("references") is None:
+            missing_kwargs = {k: None for k in self._feature_names() if k not in kwargs}
+            kwargs.update(missing_kwargs)
         else:
-            missing_inputs = [k for k in self._feature_names() if k not in all_kwargs]
+            missing_inputs = [k for k in self._feature_names() if k not in kwargs]
             if missing_inputs:
                 raise ValueError(
                     f"Evaluation module inputs are missing: {missing_inputs}. All required inputs are {list(self._feature_names())}"
                 )
-        inputs = {input_name: all_kwargs[input_name] for input_name in self._feature_names()}
+        inputs = {input_name: kwargs[input_name] for input_name in self._feature_names()}
         compute_kwargs = {k: kwargs[k] for k in kwargs if k not in self._feature_names()}
 
         if any(v is not None for v in inputs.values()):
